@@ -1,10 +1,16 @@
 'use strict';
 
 const express = require('express');
-const { asyncHandler } = require('../middleware/async-handler');
+const {
+  asyncHandler
+} = require('../middleware/async-handler');
 //const { User } = require('./models');
-const { sequelize } = require('../models');
-const { authenticateUser } = require('../middleware/auth-user');
+const {
+  sequelize
+} = require('../models');
+const {
+  authenticateUser
+} = require('../middleware/auth-user');
 var initModels = require("../models/init-models");
 
 // Construct a router instance.
@@ -29,18 +35,26 @@ router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
 router.post('/users', asyncHandler(async (req, res) => {
   try {
     const user = req.body;
-    // const userJson = JSON.parse(`{
-    //   "firstName": "${user.firstName}",
-    //   "lastName": "${user.lastName}",
-    //   "emailAddress": "${user.emailAddress}",
-    //   "password": "${user.password}"
 
-    // }`)
-    let userFName = user.firstName;
-
-    await User.create(req.body);
-    console.log('Account successfully created!');
-    res.status(201).location('/').end(); 
+    if (user.password) {
+      //hashing the password before it gets stored.
+      user.password = bcryptjs.hashSync(user.password);
+    }
+    //check if user already exists
+    let existingUser = await User.findOne({
+      where: {
+        emailAddress: user.emailAddress
+      }
+    });
+    if (!existingUser) {
+      await User.create(user);
+      console.log('Account successfully created!');
+      res.status(201).location('/').end();
+    } else {
+      res.status(400).json({
+        "Error": "The email already exists."
+      })
+    }
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
       const errors = error.errors.map(err => err.message);

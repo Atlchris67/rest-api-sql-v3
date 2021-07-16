@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
   return sequelize.define('course', {
     id: {
       autoIncrement: true,
@@ -10,12 +10,22 @@ module.exports = function(sequelize, DataTypes) {
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      defaultValue: ""
+      defaultValue: "",
+      validate: {
+        notEmpty: {
+          msg: 'Please enter a title.'
+        }
+      }
     },
     description: {
       type: DataTypes.TEXT,
       allowNull: false,
-      defaultValue: ""
+      defaultValue: "",
+      validate: {
+        notEmpty: {
+          msg: 'Please enter a decription.'
+        }
+      },
     },
     estimatedTime: {
       type: DataTypes.STRING(255),
