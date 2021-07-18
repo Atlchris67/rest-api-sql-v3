@@ -102,16 +102,30 @@ router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
 }));
 
 // Send a PUT request to /quotes/:id to UPDATE (edit) a quote
-router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
+router.put('/courses/:id', authenticateUser, [
+  body("title").notEmpty().withMessage("Please enter a title."),
+  body("description").notEmpty().withMessage("Please enter a description.")
+ ], asyncHandler(async (req, res) => {
   try {
     const course = await Course.findByPk(req.params.id);
     if (!course) {
       res.status(404).end();
       return;
     }
-    course.update(req.body);
-    console.log('Course successfully updated.');
-    res.status(200).end();
+    if(course.userId === req.currentUser.id){
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const errorArray = errors.array();
+        const message = errorArray.map(error => error.msg)
+        return res.status(400).json({ Error : message });
+      } else {
+        await course.update(req.body)
+        res.status(204).end()
+      }
+    }else{
+      res.status(403).json({"Error" : "You are not authorized to edit this course."})
+    }
+  
   } catch (error) {
 
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError' || error.name === 'SequelizeForeignKeyConstraintError') {
@@ -147,7 +161,7 @@ router.delete("/courses/:id", authenticateUser, asyncHandler(async (req, res, ne
     }
   } else {
     //if it does not match, access denied
-    res.status(403).json('Access Denied, current user doesn\'t own the requested course');
+    res.status(403).json('You are not authorized to delete this course.');
   }
 }));
 

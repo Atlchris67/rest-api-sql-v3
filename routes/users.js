@@ -1,6 +1,8 @@
 'use strict';
 
 const express = require('express');
+const bcryptjs = require('bcryptjs');
+
 const {
   asyncHandler
 } = require('../middleware/async-handler');
@@ -40,21 +42,10 @@ router.post('/users', asyncHandler(async (req, res) => {
       //hashing the password before it gets stored.
       user.password = bcryptjs.hashSync(user.password);
     }
-    //check if user already exists
-    let existingUser = await User.findOne({
-      where: {
-        emailAddress: user.emailAddress
-      }
-    });
-    if (!existingUser) {
-      await User.create(user);
-      console.log('Account successfully created!');
-      res.status(201).location('/').end();
-    } else {
-      res.status(400).json({
-        "Error": "The email already exists."
-      })
-    }
+    await User.create(user);
+    res.status(201).location('/').end();            
+    console.log('User created!');
+
   } catch (error) {
     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
       const errors = error.errors.map(err => err.message);
